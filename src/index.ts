@@ -81,6 +81,7 @@ const handleUnupdatablePullRequest = async (
 
 const handlePullRequest = async (
   pullRequest: PullRequest,
+  updateMethod: string,
   {
     eventPayload,
     octokit,
@@ -110,6 +111,7 @@ const handlePullRequest = async (
           {
             ...context.repo,
             pull_number: pullRequest.number,
+            update_method: updateMethod,
           },
         );
         info("Updated!");
@@ -125,6 +127,14 @@ const run = async () => {
   try {
     const token = getInput("github_token", { required: true });
     const octokit = getOctokit(token);
+
+    const updateMethod = getInput("update_method", { required: true });
+
+    if (!["merge", "rebase"].includes(updateMethod)) {
+      throw new Error(
+        `Unsupported update_method must be one of "merge" or "rebase" but "${updateMethod}" was used`,
+      );
+    }
 
     if (context.eventName !== "push") {
       throw new Error(
@@ -156,7 +166,10 @@ const run = async () => {
     for (const pullRequest of pullRequests) {
       // PRs are handled sequentially to avoid breaking GitHub's log grouping feature.
       // eslint-disable-next-line no-await-in-loop
-      await handlePullRequest(pullRequest, { eventPayload, octokit });
+      await handlePullRequest(pullRequest, updateMethod, {
+        eventPayload,
+        octokit,
+      });
     }
   } catch (error: unknown) {
     setFailed(ensureError(error));

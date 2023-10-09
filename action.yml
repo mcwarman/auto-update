@@ -5,6 +5,10 @@ inputs:
   github_token:
     description: Token for the GitHub API.
     default: ${{ github.token }}
+  update_method:
+    description: |
+      The method to use when updating pull request, supported values: merge, rebase
+    default: merge
 runs:
   using: node16
   main: dist/index.js
